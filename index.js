@@ -1,3 +1,4 @@
+
 const dotenv = require('dotenv');
 dotenv.config();
 const express = require('express');
@@ -11,8 +12,8 @@ const CONNECTION_STRING = process.env.CONNECTION_STRING
 let database = null; 
 const PORT = process.env.PORT || 5001
 
-app.listen(PORT, () => {  
-    MongoClient.connect(CONNECTION_STRING, (error, client) => { 
+app.listen(PORT,async () => {  
+ await   MongoClient.connect(CONNECTION_STRING, (error, client) => { 
         database = client.db(DATABASENAME)  
         if (error) {
             console.log(error)
