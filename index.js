@@ -88,28 +88,17 @@ app.get('/categoryProducts/:id', (request, response) => {
             console.log(error)
         }
     })
-})
-//for testing purposes...
-app.get('/endpoint-1', (req, res) => {
-    database.collection('categoriescollection').find({}).toArray((error, result) => {
-        if (!error) {
-            res.status(200).json({
-                status:200,
-                success: true,
-                data: {
-                    categories : result
-                }
-            })
-        } else {
-            res.status(404).json({
-                status:404,
-                success: true,
-                data: {
-                    error
-                }
-            }) 
-        }
-        }) 
 }) 
-app.use('/user/register', require('./routes/register'));
+ 
 
+
+app.use('/user/register', require('./routes/register'));
+app.use('/user/get/cart', require('./routes/getCart'));
+//adds an item to the cart
+app.use('/user/add/cart', require('./routes/addCart'));
+//deletes the specified product from cart
+app.use('/user/remove/cart/product', require('./routes/removeCartItem'));
+ 
+
+//deletes the whole cart
+app.use('/user/remove/cart', require('./routes/removeCart'));
