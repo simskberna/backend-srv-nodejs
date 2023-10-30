@@ -2,7 +2,17 @@
 const  mongoose  = require('mongoose');
 const connection = require('../connection') 
 const User = require('../models/User')
- 
+const makeid = (length=5) => { 
+    let result = '';
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    const charactersLength = characters.length;
+    let counter = 0;
+    while (counter < length) {
+      result += characters.charAt(Math.floor(Math.random() * charactersLength));
+      counter += 1;
+    }
+    return result;
+} 
  
 
 const handleDisplayingCart = async(req, res) => {
@@ -31,29 +41,65 @@ const handleDisplayingCart = async(req, res) => {
 const handleCartAdd = async(req, res) => {
     const { productId, price, quantity } = req.body;  
     const id = req.params.id;
+    let userObj = {}
     try {  
         await connection.callDB('users').then((collection) => {
-            if (!collection.cart || !id || !cart) {
-                collection.updateOne(
-                    {
-                        "userid": id, 
-                    },
-                    {
-                        $push:{ 
-                            "cart.products": {
-                                productId: productId,
-                                price: price,
-                                quantity: quantity
-                            }
+            collection.find({}).toArray((error, res_) => { 
+                userObj = res_.find(x => x.userid === id) 
+                if (userObj !== '' && userObj.cart && userObj.cart) {
+                    let matched = ''
+                    let total = 0
+                    if (userObj.cart.products && userObj.cart.products.length > 0) {
+                        for (let item of userObj.cart.products) {
+                            total += (item.price * item.quantity)
                         }
+                        matched = userObj.cart.products.find(product => { return product.productId === productId })  
+                    }  
+                    total = Math.round(total * 100) / 100
+                    if (matched !== '' && matched) {  
+                        //if there is one more record with this productId then update quantity instead of push   
+                        collection.updateOne(
+                            {
+                                "userid": id,  "cart.products.productId" : productId
+                            },
+                           
+                            {
+                                $set: {
+                                    "cart.products.$.quantity": matched.quantity + quantity,
+                                    "cart.total" : (total+price)
+                                },  
+                            },   
+                           
+                        )
+                        res.status(200).json({ 'message:': 'Product added to cart successfully...' })
+                        return
+                        
+                    } else {
+                        collection.updateOne(
+                            {
+                                "userid": id, 
+                            },
+                            {
+                                $push:{ 
+                                    "cart.products": {
+                                        productId: productId,
+                                        price: price,
+                                        quantity: quantity
+                                    },
+                                    
+                                },
+                                $set: {
+                                    "cart.total": (total+price)
+                                }
+                            }
+                        )
+                        res.status(200).json({ 'message:':'Product added to cart successfully...'})
+                        return
                     }
-                )
-                res.status(200).json({ 'message:':'Product added to cart successfully...'})
-                return
-            }
-            res.status(500).json({ 'message': 'Missing information!' })
-           
-        })
+                }
+            }) 
+            
+        }).catch((err) => res.status(500).json({ 'message': 'Something went wrong! ' + err }) )
         
        
     } catch (err) {
@@ -72,7 +118,7 @@ const handleCartDelete = async (req, res) => {
                     },
                     {
                         $unset:{ 
-                           "cart":{}
+                           "cart.products":[]
                         }
                     }
                 )
@@ -147,5 +193,50 @@ const handleNewUser = async (req, res) => {
     }
  
 }
+const handlePurchase = async (req, res) => {
+    const { products } = req.body;  
+    const id = req.params.id; 
+    try {
+        const orderNo = makeid()
+        await connection.callDB('users').then((collection) => {
+            if (collection.cart || id) {
+                //updates the orders
+                collection.updateOne(
+                    {
+                        "userid": id, 
+                    },
+                    {
+                        $push:{ 
+                            "orders": {
+                                "order": {
+                                    "products": products,
+                                    "orderId":orderNo
+                               }
+                           }
+                        }
+                    }
+                )
+                //deletes the cart
+                collection.updateOne(
+                    {
+                        "userid": id, 
+                    },
+                    {
+                        $unset:{ 
+                            "cart.products": [],
+                            "cart.total" : 0
+                        }
+                    }
+                )
+                res.status(200).json({ 'message': 'Purchased successfully','orderId': orderNo})
+                return
+            }
+            res.status(500).json({ 'message': 'Missing information!' })
+           
+        })
+    } catch (err) {
+        res.status(500).json({'message':err.message})
+    }
+}
 
-module.exports = { handleNewUser,handleCartAdd,handleDisplayingCart,handleCartDelete ,handleCartItemDelete}
+module.exports = { handleNewUser,handleCartAdd,handleDisplayingCart,handleCartDelete ,handleCartItemDelete,handlePurchase}

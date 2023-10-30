@@ -9,8 +9,12 @@ const userSchema = new mongoose.Schema({
     cart: {
         type: Object,
         required: false,
-        default:{},
-       
+        default: {}, 
+    },
+    orders: {
+        type: Array,
+        required: false,
+        default:{}
     }
 },{ minimize: false })
 const User = mongoose.model('User',userSchema)

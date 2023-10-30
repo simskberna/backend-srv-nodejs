@@ -94,6 +94,7 @@ app.get('/categoryProducts/:id', (request, response) => {
 
 app.use('/user/register', require('./routes/register'));
 app.use('/user/get/cart', require('./routes/getCart'));
+app.use('/user/purchase', require('./routes/createPurchase'));
 //adds an item to the cart
 app.use('/user/add/cart', require('./routes/addCart'));
 //deletes the specified product from cart
