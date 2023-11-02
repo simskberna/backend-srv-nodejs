@@ -24,7 +24,7 @@ const handleDisplayingCart = async(req, res) => {
             .then((collection) => { 
                 collection.find({}).toArray((error, res_) => {  
                     const user = res_.find((user) => user.userid.toString() === id.toString())    
-                    if (user && user.cart && user.cart.products && user.cart.products.length > 0) { 
+                    if (user && user.cart && user.cart.products && user.cart.products.length > 0) {  
                         res.status(200).json({ 'data': user.cart }) 
                         return
                     }
@@ -43,61 +43,62 @@ const handleCartAdd = async(req, res) => {
     const id = req.params.id;
     let userObj = {}
     try {  
-        await connection.callDB('users').then((collection) => {
-            collection.find({}).toArray((error, res_) => { 
-                userObj = res_.find(x => x.userid === id) 
-                if (userObj !== '' && userObj.cart && userObj.cart) {
-                    let matched = ''
-                    let total = 0
-                    if (userObj.cart.products && userObj.cart.products.length > 0) {
-                        for (let item of userObj.cart.products) {
-                            total += (item.price * item.quantity)
-                        }
-                        matched = userObj.cart.products.find(product => { return product.productId === productId })  
-                    }  
-                    total = Math.round(total * 100) / 100
-                    if (matched !== '' && matched) {  
-                        //if there is one more record with this productId then update quantity instead of push   
-                        collection.updateOne(
-                            {
-                                "userid": id,  "cart.products.productId" : productId
-                            },
-                           
-                            {
-                                $set: {
-                                    "cart.products.$.quantity": matched.quantity + quantity,
-                                    "cart.total" : (total+price)
-                                },  
-                            },   
-                           
-                        )
-                        res.status(200).json({ 'message:': 'Product added to cart successfully...' })
-                        return
-                        
-                    } else {
-                        collection.updateOne(
-                            {
-                                "userid": id, 
-                            },
-                            {
-                                $push:{ 
-                                    "cart.products": {
-                                        productId: productId,
-                                        price: price,
-                                        quantity: quantity
-                                    },
-                                    
-                                },
-                                $set: {
-                                    "cart.total": (total+price)
-                                }
+        await connection
+            .callDB('users')
+            .then((collection) => {
+                collection.find({}).toArray((error, res_) => { 
+                    userObj = res_.find(x => x.userid === id) 
+                    if (userObj !== '' && userObj.cart && userObj.cart) {
+                        let matched = ''
+                        let total = 0
+                        if (userObj.cart.products && userObj.cart.products.length > 0) {
+                            for (let item of userObj.cart.products) {
+                                total += (item.price * item.quantity)
                             }
-                        )
-                        res.status(200).json({ 'message:':'Product added to cart successfully...'})
-                        return
+                            matched = userObj.cart.products.find(product => { return product.productId === productId })  
+                        }  
+                        if (matched !== '' && matched) {  
+                            //if there is one more record with this productId then update quantity instead of push   
+                            collection.updateOne(
+                                {
+                                    "userid": id,  "cart.products.productId" : productId
+                                },
+                            
+                                {
+                                    $set: {
+                                        "cart.products.$.quantity": matched.quantity + quantity,
+                                        "cart.total" : (total+price)
+                                    },  
+                                },   
+                            
+                            )
+                            res.status(200).json({ 'message:': 'Product added to cart successfully...' })
+                            return
+                            
+                        } else {
+                            collection.updateOne(
+                                {
+                                    "userid": id, 
+                                },
+                                {
+                                    $push:{ 
+                                        "cart.products": {
+                                            productId: productId,
+                                            price: price,
+                                            quantity: quantity
+                                        },
+                                        
+                                    },
+                                    $set: {
+                                        "cart.total": (total+price)
+                                    }
+                                }
+                            )
+                            res.status(200).json({ 'message:':'Product added to cart successfully...'})
+                            return
+                        }
                     }
-                }
-            }) 
+                }) 
             
         }).catch((err) => res.status(500).json({ 'message': 'Something went wrong! ' + err }) )
         
