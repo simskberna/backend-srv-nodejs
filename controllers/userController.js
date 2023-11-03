@@ -138,24 +138,34 @@ const handleCartDelete = async (req, res) => {
 const handleCartItemDelete = async (req, res) => {
     const productId = parseInt(req.params.productId)
     const userid = req.params.id 
+    let userObj = {}
+    let removedPrd = ''
+    let total = 0
     try {   
         await connection.callDB('users').then((collection) => {
-            
-            if (collection.cart || userid || productId) {  
-                collection.updateOne(
-                    {
-                        "userid": userid, 
-                    },
-                    {
-                        $pull:{ 
-                           "cart.products":{productId:productId}
+            collection.find({}).toArray((error, res_) => { 
+                userObj = res_.find(x => x.userid === userid)   
+                total = userObj.cart.total 
+                removedPrd = userObj.cart.products.find(prd => prd.productId === productId) 
+                if ((collection.cart || userid || productId) && removedPrd) {  
+                    collection.updateOne(
+                        {
+                            "userid": userid, 
+                        },
+                        {
+                            $pull:{ 
+                               "cart.products":{productId:removedPrd.productId}
+                            },
+                            $set: { 
+                                "cart.total" : (total-removedPrd.price)
+                            }, 
                         }
-                    }
-                )
-                res.status(200).json({ 'message': 'Product removed from the cart successfully' })
-                return
-            }
-            res.status(500).json({ 'message': 'Missing information!' })
+                    )
+                    res.status(200).json({ 'message': 'Product removed from the cart successfully' })
+                    return
+                }
+                res.status(500).json({ 'message': 'Missing information!' })
+            }) 
         })
         
        
