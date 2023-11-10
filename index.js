@@ -21,11 +21,14 @@ app.listen(PORT,async () => {
             console.log(error)
         } else {
             console.log('Mongo DB Connection Successful')
+
         }
     })  
 }) 
-
-
+ 
+app.get('/', (request, response) => {  
+    response.send("Connection Successfull")
+}) 
 //to get all products
 app.get('/GetProducts', (request, response) => {  
     database.collection('productscollection').find({}).toArray((error, result) => {
