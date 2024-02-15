@@ -14,17 +14,18 @@ const CONNECTION_STRING = process.env.CONNECTION_STRING
 let database = null; 
 const PORT = process.env.PORT || 5001
 
-app.listen(PORT,async () => {  
- await  MongoClient.connect(CONNECTION_STRING, (error, client) => { 
-        database = client.db(DATABASENAME)  
+
+MongoClient.connect(CONNECTION_STRING, (error, client) => { 
+    database = client.db(DATABASENAME);
+    app.listen(PORT, async () => {  
         if (error) {
             console.log(error)
         } else {
-            console.log('Mongo DB Connection Successful')
-
+             console.log('Mongo DB Connection Successful') 
         }
-    })  
-}) 
+    }) 
+   
+})  
  
 app.get('/', (request, response) => {  
     response.send("Connection Successfull")
