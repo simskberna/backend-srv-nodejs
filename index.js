@@ -7,7 +7,9 @@ const cors = require('cors');
 
 
 const app = express();  
-app.use(cors()); 
+app.use(cors({
+    origin: "*",
+  })); 
 const DATABASENAME = process.env.DATABASE
 const CONNECTION_STRING = process.env.CONNECTION_STRING
 
